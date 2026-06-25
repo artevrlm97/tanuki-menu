@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TAN·UKI — Menú</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --panel:#121212;
+    --line:#272727;
+    --white:#f4f4f2;
+    --dim:#8a8a86;
+    --red:#e8392f;
+    --yellow:#f4c224;
+    --mono:'IBM Plex Mono', monospace;
+    --grot:'Space Grotesk', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background:var(--bg);
+    color:var(--white);
+    font-family:var(--mono);
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+  }
+  body{
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size:28px 28px;
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,10,10,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    padding:14px 16px 12px;
+  }
+  .topbar-row{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:10px;
+  }
+  .brand{display:flex; flex-direction:column; gap:2px;}
+  .kana{
+    font-size:11px; letter-spacing:0.25em; color:var(--red);
+    font-family:var(--mono);
+  }
+  .wordmark{
+    font-family:var(--grot); font-weight:700; font-size:22px;
+    letter-spacing:0.06em; color:var(--white);
+  }
+  .wordmark span{color:var(--yellow);}
+  .status{
+    display:flex; align-items:center; gap:6px;
+    font-size:10px; letter-spacing:0.12em; color:var(--dim);
+    text-transform:uppercase; white-space:nowrap;
+  }
+  .dot{
+    width:6px; height:6px; border-radius:50%; background:var(--yellow);
+    box-shadow:0 0 8px var(--yellow);
+    animation:pulse 1.8s infinite ease-in-out;
+  }
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+  /* ---- category filter bar ---- */
+  .catbar{
+    display:flex; gap:8px; overflow-x:auto;
+    padding:12px 16px 0; margin-top:10px;
+    scrollbar-width:none;
+  }
+  .catbar::-webkit-scrollbar{display:none;}
+  .catchip{
+    flex:0 0 auto;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--dim); background:var(--panel);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:2px;
+    white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .catchip.active{
+    color:var(--bg); background:var(--yellow); border-color:var(--yellow);
+    font-weight:600;
+  }
+
+  /* ---- main ---- */
+  main{padding:18px 16px 0;}
+  .section-title{
+    display:flex; align-items:center; gap:10px;
+    margin:28px 0 14px;
+  }
+  .section-title:first-child{margin-top:6px;}
+  .section-emoji{font-size:18px;}
+  .section-name{
+    font-family:var(--grot); font-weight:700; font-size:15px;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--white);
+  }
+  .section-rule{
+    flex:1; height:1px; background:var(--line);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  @media(min-width:560px){
+    .grid{grid-template-columns:1fr 1fr;}
+  }
+  @media(min-width:900px){
+    .grid{grid-template-columns:1fr 1fr 1fr;}
+  }
+
+  /* ---- card ---- */
+  .card{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .card::before, .card::after{
+    content:''; position:absolute; width:10px; height:10px;
+    pointer-events:none; z-index:2;
+  }
+  .card::before{
+    top:-1px; left:-1px;
+    border-top:2px solid var(--red); border-left:2px solid var(--red);
+  }
+  .card::after{
+    bottom:-1px; right:-1px;
+    border-bottom:2px solid var(--yellow); border-right:2px solid var(--yellow);
+  }
+  .card-img-wrap{
+    width:100%; aspect-ratio:4/3;
+    background:#000;
+    position:relative;
+    overflow:hidden;
+    border-bottom:1px solid var(--line);
+  }
+  .card-img-wrap img{
+    width:100%; height:100%; object-fit:cover;
+    display:block;
+    filter:saturate(1.05) contrast(1.03);
+  }
+  .img-fallback{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px;
+    background:
+      repeating-linear-gradient(135deg, #161616 0 8px, #101010 8px 16px);
+    color:var(--dim);
+  }
+  .card-body{
+    padding:13px 14px 14px;
+    display:flex; flex-direction:column; gap:8px;
+    flex:1;
+  }
+  .card-top{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:10px;
+  }
+  .card-name{
+    font-family:var(--grot); font-weight:600; font-size:16px;
+    color:var(--white); line-height:1.25;
+  }
+  .card-price{
+    font-family:var(--mono); font-weight:600; font-size:15px;
+    color:var(--yellow); white-space:nowrap;
+    padding-top:1px;
+  }
+  .card-price::before{content:'Bs ';font-size:11px;color:var(--dim);}
+
+  .flavors{
+    display:flex; flex-wrap:wrap; gap:6px;
+    margin-top:2px;
+  }
+  .flavor-chip{
+    font-size:11px; font-family:var(--mono);
+    color:var(--dim);
+    background:#1a1a1a;
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:4px 8px;
+    display:flex; align-items:center; gap:4px;
+    white-space:nowrap;
+  }
+  .flavor-chip .extra{color:var(--red); font-weight:600;}
+  .flavor-label{
+    font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--dim); margin-top:4px;
+  }
+
+  /* ---- states ---- */
+  .state{
+    text-align:center; padding:60px 20px;
+    color:var(--dim);
+  }
+  .state h3{
+    font-family:var(--grot); color:var(--white); font-size:16px;
+    margin-bottom:8px; letter-spacing:0.04em;
+  }
+  .state.err h3{color:var(--red);}
+  .spinner{
+    width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--line); border-top-color:var(--yellow);
+    margin:0 auto 16px; animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  footer{
+    text-align:center; padding:30px 16px 10px;
+    color:var(--line);
+    font-size:10px; letter-spacing:0.1em;
+  }
+  footer span{color:var(--dim);}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="brand">
+        <span class="kana">タヌキ</span>
+        <span class="wordmark">TAN<span>·</span>UKI</span>
+      </div>
+      <div class="status"><span class="dot"></span>MENÚ</div>
+    </div>
+    <div class="catbar" id="catbar"></div>
+  </div>
+
+  <main id="app">
+    <div class="state">
+      <div class="spinner"></div>
+      <h3>Cargando menú</h3>
+    </div>
+  </main>
+
+  <footer>TAN·UKI <span>// SISTEMA DE MENÚ DIGITAL</span></footer>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQISXEQ1tKYxuXqnkdemf8ywcSBoZIrG7s-n_5JR2ROA2IwInmzl78-ghsrnq5HCY31G_pQxSq66Nie/pub?output=csv";
+
+const norm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+function mapHeaders(fields){
+  const map = {};
+  fields.forEach(f=>{
+    const n = norm(f);
+    if(n.includes('producto') && !n.includes('categ')) map.producto = f;
+    else if(n.includes('categoria') && n.includes('emoji')) map.categoriaEmoji = f;
+    else if(n === 'categoria' || (n.includes('categoria') && !n.includes('emoji'))) map.categoria = f;
+    else if(n.includes('precio')) map.precio = f;
+    else if(n.includes('imagen')) map.imagen = f;
+    else if(n.includes('sabor')) map.sabores = f;
+    else if(n.includes('tiene')) map.tieneSabores = f;
+  });
+  return map;
+}
+
+function parseSabores(str){
+  if(!str) return [];
+  return String(str).split('|').map(s=>s.trim()).filter(Boolean).map(item=>{
+    const m = item.match(/^(\S+)\s+(.+?)(\s*\(([^)]+)\))?$/);
+    if(!m) return {emoji:'', name:item, extra:null};
+    return {emoji:m[1], name:m[2].trim(), extra:m[4]||null};
+  });
+}
+
+let ALL_ROWS = [];
+let ACTIVE_CAT = 'TODOS';
+
+function render(){
+  const app = document.getElementById('app');
+  const cats = ['TODOS', ...new Set(ALL_ROWS.map(r=>r.categoria))];
+  const catbar = document.getElementById('catbar');
+  catbar.innerHTML = cats.map(c=>{
+    const row = ALL_ROWS.find(r=>r.categoria===c);
+    const em = c==='TODOS' ? '◎' : (row ? row.categoriaEmoji : '');
+    return `<div class="catchip ${c===ACTIVE_CAT?'active':''}" data-cat="${c}">${em} ${c}</div>`;
+  }).join('');
+  catbar.querySelectorAll('.catchip').forEach(el=>{
+    el.addEventListener('click', ()=>{ ACTIVE_CAT = el.dataset.cat; render(); });
+  });
+
+  const rows = ACTIVE_CAT==='TODOS' ? ALL_ROWS : ALL_ROWS.filter(r=>r.categoria===ACTIVE_CAT);
+  const groups = {};
+  rows.forEach(r=>{ (groups[r.categoria] = groups[r.categoria] || []).push(r); });
+
+  if(rows.length===0){
+    app.innerHTML = `<div class="state"><h3>Sin productos</h3><p>No hay nada en esta categoría todavía.</p></div>`;
+    return;
+  }
+
+  app.innerHTML = Object.keys(groups).map(catName=>{
+    const items = groups[catName];
+    const em = items[0].categoriaEmoji;
+    const cards = items.map(item=>{
+      const sabores = parseSabores(item.sabores);
+      const flavorsHtml = sabores.length ? `
+        <div class="flavor-label">Sabores</div>
+        <div class="flavors">
+          ${sabores.map(s=>`<span class="flavor-chip">${s.emoji} ${s.name}${s.extra?` <span class="extra">+${s.extra.replace('+','')}</span>`:''}</span>`).join('')}
+        </div>` : '';
+      return `
+        <div class="card">
+          <div class="card-img-wrap">
+            <img src="${item.imagen}" alt="${item.producto}" loading="lazy"
+              onerror="this.parentElement.innerHTML='<div class=\\'img-fallback\\'>${em}</div>'">
+          </div>
+          <div class="card-body">
+            <div class="card-top">
+              <div class="card-name">${item.producto}</div>
+              <div class="card-price">${item.precio}</div>
+            </div>
+            ${flavorsHtml}
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="section-title">
+        <span class="section-emoji">${em}</span>
+        <span class="section-name">${catName}</span>
+        <span class="section-rule"></span>
+      </div>
+      <div class="grid">${cards}</div>`;
+  }).join('');
+}
+
+function load(){
+  const url = CSV_URL + (CSV_URL.includes('?') ? '&':'?') + '_cb=' + Date.now();
+  Papa.parse(url, {
+    download:true, header:true, skipEmptyLines:true,
+    complete:(res)=>{
+      try{
+        const fields = res.meta.fields || [];
+        const map = mapHeaders(fields);
+        if(!map.producto || !map.categoria){
+          document.getElementById('app').innerHTML = `<div class="state err"><h3>No encuentro las columnas</h3><p>Revisa los encabezados del Sheet (producto, categoria, precio, imagen, sabores).</p></div>`;
+          return;
+        }
+        ALL_ROWS = (res.data||[])
+          .filter(r => String(r[map.producto]||'').trim())
+          .map(r => ({
+            producto: r[map.producto],
+            categoria: r[map.categoria],
+            categoriaEmoji: map.categoriaEmoji ? r[map.categoriaEmoji] : '',
+            precio: r[map.precio],
+            imagen: r[map.imagen],
+            sabores: map.sabores ? r[map.sabores] : '',
+          }));
+        render();
+      }catch(e){
+        document.getElementById('app').innerHTML = `<div class="state err"><h3>Error al leer los datos</h3><p>${e.message}</p></div>`;
+      }
+    },
+    error:()=>{
+      document.getElementById('app').innerHTML = `<div class="state err"><h3>No se pudo cargar el menú</h3><p>Verifica que el Sheet siga publicado en la web como CSV.</p></div>`;
+    }
+  });
+}
+load();
+</script>
+</body>
+</html>
